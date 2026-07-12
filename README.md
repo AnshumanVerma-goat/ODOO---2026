@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # TransitOps Backend
 
 TransitOps is a production-oriented transport management backend built with FastAPI, SQLAlchemy 2.0, PostgreSQL, Alembic, and JWT authentication.
@@ -148,3 +149,6 @@ The current suite covers:
 - Default roles are seeded on application startup.
 - All authenticated endpoints expect a JWT access token in the `Authorization: Bearer <token>` header.
 - Trip and maintenance actions enforce the business rules documented in the project requirements.
+=======
+# ODOO---2026
+>>>>>>> c3ba20f6ff4f86db249ab71f05be2297706495a0
