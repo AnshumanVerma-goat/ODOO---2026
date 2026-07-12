@@ -131,3 +131,89 @@ export interface SafetyReportTemplate {
   frequency: 'weekly' | 'monthly' | 'quarterly' | 'on_demand'
   lastGenerated?: string
 }
+
+// ─── Finance Manager portal ──────────────────────────────────────────────────
+
+export type FinanceNotificationType =
+  | 'budget_alert'
+  | 'expense_spike'
+  | 'maintenance_due'
+  | 'revenue_milestone'
+  | 'approval_required'
+  | 'system'
+
+export type FinanceReportFrequency = 'weekly' | 'monthly' | 'quarterly' | 'on_demand'
+export type ReportFormat = 'pdf' | 'csv' | 'xlsx'
+export type FinancePeriod = '7d' | '30d' | '90d' | 'ytd' | '12m'
+
+export interface FinanceNotification {
+  id: string
+  type: FinanceNotificationType
+  title: string
+  message: string
+  createdAt: string
+  read: boolean
+  priority: NotificationPriority
+  link?: string
+  amount?: number
+}
+
+export interface FinanceReportTemplate {
+  id: string
+  name: string
+  description: string
+  frequency: FinanceReportFrequency
+  formats: ReportFormat[]
+  lastGenerated?: string
+  category: 'revenue' | 'expense' | 'fuel' | 'maintenance' | 'summary'
+}
+
+export interface RevenueRecord {
+  month: string
+  revenue: number
+  expenses: number
+  profit: number
+}
+
+export interface FuelRecord {
+  id: string
+  vehicle: string
+  date: string
+  liters: number
+  costPerLiter: number
+  amount: number
+  route: string
+  driver: string
+}
+
+export interface MaintenanceCostRecord {
+  id: string
+  vehicle: string
+  type: string
+  date: string
+  cost: number
+  status: 'pending' | 'in_progress' | 'completed'
+  vendor: string
+  description: string
+}
+
+export interface FinanceSettings {
+  currency: 'INR' | 'USD' | 'EUR'
+  fiscalYearStart: string
+  budgetAlerts: boolean
+  expenseThreshold: number
+  fuelAlerts: boolean
+  maintenanceAlerts: boolean
+  weeklyDigest: boolean
+  autoExport: boolean
+  defaultReportFormat: ReportFormat
+}
+
+export interface FinanceKpi {
+  label: string
+  value: string | number
+  trend?: string
+  trendDirection?: 'up' | 'down' | 'neutral'
+  variant?: 'default' | 'success' | 'warning' | 'danger'
+  icon?: string
+}

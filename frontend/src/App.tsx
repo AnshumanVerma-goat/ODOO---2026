@@ -4,6 +4,7 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { RoleRoute } from './components/RoleRoute'
 import { getDashboardPath } from './config/roles'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { FinanceProvider } from './context/FinanceContext'
 import { SafetyProvider } from './context/SafetyContext'
 import { TripsProvider } from './context/TripsContext'
 import { Analytics } from './pages/Analytics'
@@ -18,6 +19,13 @@ import { DriverDashboard } from './pages/dashboards/DriverDashboard'
 import { FinanceDashboard } from './pages/dashboards/FinanceDashboard'
 import { FleetManagerDashboard } from './pages/dashboards/FleetManagerDashboard'
 import { SafetyOfficerDashboard } from './pages/dashboards/SafetyOfficerDashboard'
+import { FinancialAnalytics } from './pages/finance/FinancialAnalytics'
+import { FinanceNotifications } from './pages/finance/FinanceNotifications'
+import { FinanceReports } from './pages/finance/FinanceReports'
+import { FinanceSettings } from './pages/finance/FinanceSettings'
+import { FuelCostManagement } from './pages/finance/FuelCostManagement'
+import { MaintenanceCostTracking } from './pages/finance/MaintenanceCostTracking'
+import { RevenueExpenseOverview } from './pages/finance/RevenueExpenseOverview'
 import { DriverCompliance } from './pages/safety/DriverCompliance'
 import { IncidentReports } from './pages/safety/IncidentReports'
 import { LicenseTracking } from './pages/safety/LicenseTracking'
@@ -36,6 +44,7 @@ export default function App() {
     <AuthProvider>
       <TripsProvider>
       <SafetyProvider>
+      <FinanceProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
@@ -64,6 +73,13 @@ export default function App() {
 
               <Route element={<RoleRoute allowedRoles={['finance_analytics_manager']} />}>
                 <Route path="finance" element={<FinanceDashboard />} />
+                <Route path="finance/revenue-expense" element={<RevenueExpenseOverview />} />
+                <Route path="finance/fuel" element={<FuelCostManagement />} />
+                <Route path="finance/maintenance" element={<MaintenanceCostTracking />} />
+                <Route path="finance/analytics" element={<FinancialAnalytics />} />
+                <Route path="finance/notifications" element={<FinanceNotifications />} />
+                <Route path="finance/reports" element={<FinanceReports />} />
+                <Route path="finance/settings" element={<FinanceSettings />} />
               </Route>
 
               <Route element={<RoleRoute allowedRoles={['fleet_manager', 'safety_officer']} />}>
@@ -93,7 +109,6 @@ export default function App() {
                       'fleet_manager',
                       'driver',
                       'safety_officer',
-                      'finance_analytics_manager',
                     ]}
                   />
                 }
@@ -105,6 +120,7 @@ export default function App() {
           <Route path="*" element={<RootRedirect />} />
         </Routes>
       </BrowserRouter>
+      </FinanceProvider>
       </SafetyProvider>
       </TripsProvider>
     </AuthProvider>

@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { getDashboardPath } from '../config/roles'
 import { useAuth } from '../context/AuthContext'
+import { useFinance } from '../context/FinanceContext'
 import { useSafety } from '../context/SafetyContext'
 import type { NavItem, UserRole } from '../types'
 
@@ -8,7 +9,7 @@ const sharedNavItems: NavItem[] = [
   {
     path: '__dashboard__',
     label: 'Dashboard',
-    roles: ['fleet_manager', 'driver', 'safety_officer', 'finance_analytics_manager'],
+    roles: ['fleet_manager', 'driver'],
   },
   { path: '/fleet', label: 'Fleet', roles: ['fleet_manager'] },
   { path: '/drivers', label: 'Drivers', roles: ['fleet_manager'] },
@@ -17,17 +18,12 @@ const sharedNavItems: NavItem[] = [
   {
     path: '/fuel-expenses',
     label: 'Fuel & Expenses',
-    roles: ['finance_analytics_manager', 'fleet_manager'],
-  },
-  {
-    path: '/analytics',
-    label: 'Analytics',
-    roles: ['finance_analytics_manager'],
+    roles: ['fleet_manager'],
   },
   {
     path: '/settings',
     label: 'Settings',
-    roles: ['fleet_manager', 'driver', 'safety_officer', 'finance_analytics_manager'],
+    roles: ['fleet_manager', 'driver'],
   },
 ]
 
@@ -40,6 +36,17 @@ const safetyNavItems: NavItem[] = [
   { path: '/safety/notifications', label: 'Notifications', roles: ['safety_officer'] },
   { path: '/safety/reports', label: 'Reports', roles: ['safety_officer'] },
   { path: '/settings', label: 'Settings', roles: ['safety_officer'] },
+]
+
+const financeNavItems: NavItem[] = [
+  { path: '/finance', label: 'Dashboard', roles: ['finance_analytics_manager'] },
+  { path: '/finance/revenue-expense', label: 'Revenue & Expenses', roles: ['finance_analytics_manager'] },
+  { path: '/finance/fuel', label: 'Fuel Costs', roles: ['finance_analytics_manager'] },
+  { path: '/finance/maintenance', label: 'Maintenance', roles: ['finance_analytics_manager'] },
+  { path: '/finance/analytics', label: 'Analytics', roles: ['finance_analytics_manager'] },
+  { path: '/finance/notifications', label: 'Notifications', roles: ['finance_analytics_manager'] },
+  { path: '/finance/reports', label: 'Reports', roles: ['finance_analytics_manager'] },
+  { path: '/finance/settings', label: 'Settings', roles: ['finance_analytics_manager'] },
 ]
 
 function resolveNavPath(item: NavItem, role: UserRole): string {
@@ -56,11 +63,17 @@ interface SidebarProps {
 
 export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
   const { role } = useAuth()
-  const { unreadCount } = useSafety()
+  const { unreadCount: safetyUnread } = useSafety()
+  const { unreadCount: financeUnread } = useFinance()
 
   if (!role) return null
 
-  const navItems = role === 'safety_officer' ? safetyNavItems : sharedNavItems
+  const navItems =
+    role === 'safety_officer'
+      ? safetyNavItems
+      : role === 'finance_analytics_manager'
+        ? financeNavItems
+        : sharedNavItems
   const visibleItems = navItems.filter((item) => item.roles.includes(role))
 
   return (
@@ -72,18 +85,20 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
       <nav className="sidebar-nav">
         {visibleItems.map((item) => {
           const path = resolveNavPath(item, role)
-          const showBadge = item.path === '/safety/notifications' && unreadCount > 0
+          const showSafetyBadge = item.path === '/safety/notifications' && safetyUnread > 0
+          const showFinanceBadge = item.path === '/finance/notifications' && financeUnread > 0
+          const badgeCount = showSafetyBadge ? safetyUnread : showFinanceBadge ? financeUnread : 0
 
           return (
             <NavLink
               key={item.path}
               to={path}
-              end={item.path === '__dashboard__' || item.path === '/safety-officer'}
+              end={item.path === '__dashboard__' || item.path === '/safety-officer' || item.path === '/finance'}
               className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
               onClick={onNavigate}
             >
               {item.label}
-              {showBadge && <span className="nav-badge">{unreadCount}</span>}
+              {badgeCount > 0 && <span className="nav-badge">{badgeCount}</span>}
             </NavLink>
           )
         })}

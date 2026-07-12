@@ -4,6 +4,7 @@ export * as driverService from './driverService'
 export * as tripService from './tripService'
 export * as maintenanceService from './maintenanceService'
 export * as expenseService from './expenseService'
+export * as financeService from './financeService'
 
 export { login, logout, getCurrentUser } from './authService'
 export {
@@ -46,3 +47,13 @@ export {
   updateExpense,
   deleteExpense,
 } from './expenseService'
+export {
+  getRevenueRecords,
+  getFuelRecords,
+  getMaintenanceCostRecords,
+  getFinanceNotifications,
+  getFinanceReports,
+  generateFinanceReport,
+  getFinanceSettings,
+  updateFinanceSettings,
+} from './financeService'
