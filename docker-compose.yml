@@ -18,11 +18,11 @@ services:
 
   backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     container_name: transitops-backend
     env_file:
-      - .env
+      - ./backend/.env
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/transitops
     ports:
@@ -31,7 +31,7 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - .:/app
+      - ./backend:/app
 
 volumes:
   transitops_postgres_data:

@@ -1,107 +1,75 @@
-<<<<<<< HEAD
-# TransitOps Backend
+# Transit
 
-TransitOps is a production-oriented transport management backend built with FastAPI, SQLAlchemy 2.0, PostgreSQL, Alembic, and JWT authentication.
+Transit is a full-stack monorepo with a FastAPI backend and a separate frontend workspace.
 
-## Tech Stack
+## Repository Tree
 
-- Python 3.12
-- FastAPI
-- SQLAlchemy 2.0 ORM
-- Alembic
-- PostgreSQL
-- Pydantic v2
-- JWT authentication
-- Passlib + bcrypt
-- Docker and Docker Compose
-- Pytest
-
-## Features
-
-- JWT access and refresh token authentication
-- Role-based access control
-- Vehicle, driver, trip, maintenance, fuel log, and expense management
-- Trip dispatch, completion, and cancellation workflows
-- Maintenance-driven vehicle status transitions
-- Dashboard KPIs and analytics reports
-- Async database access
-- Repository and service layers
-- Global exception handling
-- Pagination, search, filtering, and sorting
-- Alembic migrations
-- Dockerized deployment
-
-## Folder Structure
-
-- `app/main.py` - FastAPI app factory and router registration
-- `app/config/` - settings and logging configuration
-- `app/database/` - async engine, session, and declarative base
-- `app/models/` - SQLAlchemy ORM models
-- `app/schemas/` - Pydantic request and response models
-- `app/crud/` - repository layer
-- `app/services/` - business logic and domain rules
-- `app/routers/` - API endpoints
-- `app/middleware/` - exception handling and request logging
-- `app/auth/` - password hashing, token helpers, and auth dependencies
-- `app/utils/` - shared helpers
-- `app/core/` - enums, exceptions, seed data, and response models
-- `tests/` - pytest suite
-- `alembic/` - migration environment and revisions
-- `docker/` - container entrypoint scripts
-
-## Installation
-
-1. Create and activate a Python 3.12 virtual environment.
-2. Install dependencies:
-
-```bash
-pip install -r requirements.txt
+```text
+/
+├── backend/
+│   ├── app/
+│   ├── alembic/
+│   ├── tests/
+│   ├── Dockerfile
+│   ├── alembic.ini
+│   ├── pytest.ini
+│   ├── requirements.txt
+│   ├── .env.example
+│   └── README.md
+├── docker/
+├── frontend/
+├── docker-compose.yml
+├── README.md
+└── .gitignore
 ```
 
-3. Copy the example environment file:
+## Backend Setup
 
 ```bash
+cd backend
+pip install -r requirements.txt
 copy .env.example .env
 ```
 
-4. Update `.env` with your PostgreSQL credentials and secret key.
+Update `backend/.env` with your local values before running the app.
 
-## Running Locally
-
-Start the API:
+## Run Locally
 
 ```bash
-uvicorn app.main:app --reload
+cd backend
+python -m uvicorn app.main:app --reload
 ```
 
 The API will be available at `http://127.0.0.1:8000`.
 
-## Running With Docker
-
-Start PostgreSQL and the API:
+## Run With Docker
 
 ```bash
 docker compose up --build
 ```
 
-The backend will run on `http://localhost:8000` and PostgreSQL on `localhost:5432`.
+The backend runs on `http://localhost:8000` and PostgreSQL on `localhost:5432`.
 
-## Database Migration
-
-Create and apply migrations:
+## Database Migrations
 
 ```bash
+cd backend
 alembic upgrade head
 ```
 
-If you change the schema, generate a new migration and then upgrade again.
+If you change the schema, generate a new migration before upgrading again.
 
-## API Documentation
-
-FastAPI generates documentation automatically:
+## API Docs
 
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
+
+## Testing
+
+```bash
+cd backend
+python -m pytest
+```
 
 ## Environment Variables
 
@@ -115,40 +83,8 @@ FastAPI generates documentation automatically:
 - `CORS_ORIGINS` - allowed CORS origins
 - `LOG_LEVEL` - application log level
 
-## Coding Standards
-
-- Follow PEP 8.
-- Use SQLAlchemy 2.0 style ORM.
-- Keep routes thin and move business logic into services.
-- Use repository classes for database access.
-- Prefer async APIs end to end.
-- Validate input with Pydantic schemas.
-- Return structured API responses.
-- Avoid duplicated logic by sharing helpers in `core/` and `utils/`.
-- Keep error handling centralized in the global exception handler.
-
-## Testing
-
-Run the test suite:
-
-```bash
-pytest
-```
-
-The current suite covers:
-
-- Authentication
-- Vehicle CRUD
-- Driver CRUD
-- Trip validations and transitions
-- Maintenance transitions
-- Dashboard KPIs
-
 ## Notes
 
 - Default roles are seeded on application startup.
 - All authenticated endpoints expect a JWT access token in the `Authorization: Bearer <token>` header.
-- Trip and maintenance actions enforce the business rules documented in the project requirements.
-=======
-# ODOO---2026
->>>>>>> c3ba20f6ff4f86db249ab71f05be2297706495a0
+- Trip and maintenance actions enforce the project business rules.

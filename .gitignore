@@ -1,6 +1,8 @@
-.venv/
+backend/.venv/
+backend/.pytest_cache/
+frontend/node_modules/
 __pycache__/
-.pytest_cache/
-*.pyc
 .env
-transitops_test.db
+*.pyc
+.vscode/
+*.db

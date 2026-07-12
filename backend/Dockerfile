@@ -15,8 +15,6 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY . .
 
-RUN chmod +x /app/docker/entrypoint.sh
-
 EXPOSE 8000
 
-CMD ["/app/docker/entrypoint.sh"]
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]
