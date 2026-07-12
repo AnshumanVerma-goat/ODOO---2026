@@ -9,6 +9,7 @@ import type {
   BackendUserDto,
   LoginCredentials,
   MeResponse,
+  RegisterCredentials,
   TokenPairResponse,
 } from '../api/types'
 import type { UserRole } from '../types'
@@ -20,8 +21,8 @@ const BACKEND_ROLE_MAP: Record<string, UserRole> = {
   Dispatcher: 'driver',
 }
 
-function mapUserDto(dto: BackendUserDto): AuthUserDto {
-  const roleName = dto.role?.name ?? ''
+function mapUserDto(dto: BackendUserDto, fallbackRole?: BackendUserDto['role']): AuthUserDto {
+  const roleName = dto.role?.name ?? fallbackRole?.name ?? ''
   const role = BACKEND_ROLE_MAP[roleName]
   if (!role) {
     throw new ApiRequestError(`Unsupported role: ${roleName || 'unknown'}`, 403, 'forbidden')
@@ -48,6 +49,25 @@ export function hasStoredSession(): boolean {
 }
 
 /**
+ * Register a new user account.
+ * POST /auth/register
+ */
+export async function register(credentials: RegisterCredentials): Promise<void> {
+  try {
+    await apiClient.post<TokenPairResponse>(
+      API_ENDPOINTS.auth.register,
+      credentials,
+      { skipAuth: true },
+    )
+  } catch (err) {
+    if (err instanceof ApiRequestError && err.status === 409) {
+      throw new ApiRequestError('Email already exists.', 409, 'conflict')
+    }
+    throw err
+  }
+}
+
+/**
  * Authenticate a user and return session data.
  * POST /auth/login
  */
@@ -59,7 +79,7 @@ export async function login(credentials: LoginCredentials): Promise<AuthUserDto>
       { skipAuth: true },
     )
     setTokens(response.access_token, response.refresh_token)
-    return mapUserDto(response.user)
+    return mapUserDto(response.user, response.role)
   } catch (err) {
     if (err instanceof ApiRequestError && err.status === 401) {
       throw new ApiRequestError('Invalid email or password.', 401, 'unauthorized')

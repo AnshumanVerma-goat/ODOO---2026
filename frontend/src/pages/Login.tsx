@@ -1,6 +1,6 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { getDashboardPath } from '../config/roles'
 import { useAuth } from '../context/AuthContext'
 
@@ -39,9 +39,12 @@ function LockIcon() {
 export function Login() {
   const { user, role, login, isInitializing } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const registrationMessage = (location.state as { message?: string } | null)?.message
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState(registrationMessage ?? '')
   const [loading, setLoading] = useState(false)
 
   if (isInitializing) {
@@ -55,6 +58,7 @@ export function Login() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
+    setSuccess('')
     setLoading(true)
 
     try {
@@ -98,6 +102,7 @@ export function Login() {
           </div>
 
           <form className="login-form" onSubmit={handleSubmit}>
+            {success && <div className="login-success">{success}</div>}
             {error && <div className="login-error">{error}</div>}
 
             <div className="login-field">
@@ -136,6 +141,11 @@ export function Login() {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
+
+          <p className="login-footer-link">
+            Don&apos;t have an account?{' '}
+            <Link to="/register">Sign up</Link>
+          </p>
         </div>
       </div>
     </div>

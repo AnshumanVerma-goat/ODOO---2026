@@ -3,11 +3,18 @@ from sqlalchemy.orm import selectinload
 
 from app.auth.security import create_access_token, create_refresh_token, hash_password, verify_password
 from app.core.enums import RoleName, TokenType
+
+REGISTERABLE_ROLE_NAMES = {
+    RoleName.FLEET_MANAGER.value,
+    RoleName.DISPATCHER.value,
+    RoleName.SAFETY_OFFICER.value,
+    RoleName.FINANCIAL_ANALYST.value,
+}
 from app.core.exceptions import ConflictError, NotFoundError, UnauthorizedError
 from app.models.role import Role
 from app.models.user import User
 from app.schemas.auth import LoginRequest, RefreshRequest, RegisterRequest, TokenPair
-from app.schemas.user import UserRead
+from app.schemas.user import UserCreate, UserRead
 from app.services.role_service import RoleService
 from app.services.user_service import UserService
 
@@ -21,13 +28,20 @@ class AuthService:
     async def register(self, payload: RegisterRequest) -> TokenPair:
         role_id = payload.role_id
         if role_id is None:
-            role = await self.role_service.get_by_name(RoleName.DISPATCHER.value)
+            role_name = payload.role_name
+            if role_name not in REGISTERABLE_ROLE_NAMES:
+                raise NotFoundError("Role not found")
+            role = await self.role_service.get_by_name(role_name)
             if role is None:
-                raise NotFoundError("Default role not found")
+                raise NotFoundError("Role not found")
             role_id = role.id
         user = await self.user_service.create_user(
-            payload.model_copy(update={"role_id": role_id}),
-            default_role_id=role_id,
+            UserCreate(
+                name=payload.name,
+                email=payload.email,
+                password=payload.password,
+                role_id=role_id,
+            ),
         )
         await self.db.commit()
         refreshed_user = await self.user_service.get_by_email(user.email)

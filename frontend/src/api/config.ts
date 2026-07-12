@@ -13,6 +13,7 @@ export const REFRESH_TOKEN_KEY = 'transportops_refresh_token'
 export const API_ENDPOINTS = {
   auth: {
     login: '/auth/login',
+    register: '/auth/register',
     refresh: '/auth/refresh',
     me: '/auth/me',
   },

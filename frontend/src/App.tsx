@@ -12,6 +12,7 @@ import { Drivers } from './pages/Drivers'
 import { Fleet } from './pages/Fleet'
 import { FuelExpenses } from './pages/FuelExpenses'
 import { Login } from './pages/Login'
+import { Register } from './pages/Register'
 import { Maintenance } from './pages/Maintenance'
 import { Settings } from './pages/Settings'
 import { Trips } from './pages/Trips'
@@ -48,6 +49,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route element={<ProtectedRoute />}>
             <Route index element={<RootRedirect />} />
             <Route element={<Layout />}>
