@@ -4,6 +4,7 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { RoleRoute } from './components/RoleRoute'
 import { getDashboardPath } from './config/roles'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { SafetyProvider } from './context/SafetyContext'
 import { TripsProvider } from './context/TripsContext'
 import { Analytics } from './pages/Analytics'
 import { Drivers } from './pages/Drivers'
@@ -17,6 +18,12 @@ import { DriverDashboard } from './pages/dashboards/DriverDashboard'
 import { FinanceDashboard } from './pages/dashboards/FinanceDashboard'
 import { FleetManagerDashboard } from './pages/dashboards/FleetManagerDashboard'
 import { SafetyOfficerDashboard } from './pages/dashboards/SafetyOfficerDashboard'
+import { DriverCompliance } from './pages/safety/DriverCompliance'
+import { IncidentReports } from './pages/safety/IncidentReports'
+import { LicenseTracking } from './pages/safety/LicenseTracking'
+import { SafetyAnalytics } from './pages/safety/SafetyAnalytics'
+import { SafetyNotifications } from './pages/safety/SafetyNotifications'
+import { SafetyReports } from './pages/safety/SafetyReports'
 
 function RootRedirect() {
   const { user, role } = useAuth()
@@ -28,6 +35,7 @@ export default function App() {
   return (
     <AuthProvider>
       <TripsProvider>
+      <SafetyProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
@@ -46,6 +54,12 @@ export default function App() {
 
               <Route element={<RoleRoute allowedRoles={['safety_officer']} />}>
                 <Route path="safety-officer" element={<SafetyOfficerDashboard />} />
+                <Route path="safety/compliance" element={<DriverCompliance />} />
+                <Route path="safety/incidents" element={<IncidentReports />} />
+                <Route path="safety/licenses" element={<LicenseTracking />} />
+                <Route path="safety/analytics" element={<SafetyAnalytics />} />
+                <Route path="safety/notifications" element={<SafetyNotifications />} />
+                <Route path="safety/reports" element={<SafetyReports />} />
               </Route>
 
               <Route element={<RoleRoute allowedRoles={['finance_analytics_manager']} />}>
@@ -68,11 +82,7 @@ export default function App() {
                 <Route path="fuel-expenses" element={<FuelExpenses />} />
               </Route>
 
-              <Route
-                element={
-                  <RoleRoute allowedRoles={['finance_analytics_manager', 'safety_officer']} />
-                }
-              >
+              <Route element={<RoleRoute allowedRoles={['finance_analytics_manager']} />}>
                 <Route path="analytics" element={<Analytics />} />
               </Route>
 
@@ -95,6 +105,7 @@ export default function App() {
           <Route path="*" element={<RootRedirect />} />
         </Routes>
       </BrowserRouter>
+      </SafetyProvider>
       </TripsProvider>
     </AuthProvider>
   )

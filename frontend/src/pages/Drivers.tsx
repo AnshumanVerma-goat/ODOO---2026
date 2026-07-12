@@ -1,15 +1,6 @@
 import { drivers } from '../data/mockData'
+import { SafetyBar } from '../components/SafetyBar'
 import { StatusBadge } from '../components/StatusBadge'
-
-function SafetyBar({ score }: { score: number }) {
-  const color = score >= 85 ? 'high' : score >= 70 ? 'mid' : 'low'
-  return (
-    <div className="safety-bar">
-      <div className={`safety-bar-fill safety-bar-fill--${color}`} style={{ width: `${score}%` }} />
-      <span>{score}%</span>
-    </div>
-  )
-}
 
 export function Drivers() {
   return (
