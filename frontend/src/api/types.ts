@@ -23,9 +23,31 @@ export interface AuthUserDto {
   driverId?: string
 }
 
-export interface LoginResponse {
-  user: AuthUserDto
-  token: string
+export interface BackendRoleDto {
+  id: number
+  name: string
+}
+
+export interface BackendUserDto {
+  id: number
+  name: string
+  email: string
+  role_id: number
+  role?: BackendRoleDto | null
+}
+
+export interface TokenPairResponse {
+  access_token: string
+  refresh_token: string
+  token_type: string
+  user: BackendUserDto
+  role?: BackendRoleDto | null
+}
+
+export interface MeResponse {
+  success: boolean
+  message: string
+  data: BackendUserDto
 }
 
 // ─── Vehicles ──────────────────────────────────────────────────────────────

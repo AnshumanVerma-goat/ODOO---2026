@@ -37,29 +37,35 @@ function LockIcon() {
 }
 
 export function Login() {
-  const { user, role, login } = useAuth()
+  const { user, role, login, isInitializing } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  if (isInitializing) {
+    return null
+  }
+
   if (user && role) {
     return <Navigate to={getDashboardPath(role)} replace />
   }
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
 
-    const result = login(email, password)
-    setLoading(false)
-
-    if (result.success && result.redirectTo) {
-      navigate(result.redirectTo)
-    } else {
-      setError(result.error ?? 'Login failed.')
+    try {
+      const result = await login(email, password)
+      if (result.success && result.redirectTo) {
+        navigate(result.redirectTo)
+      } else {
+        setError(result.error ?? 'Login failed.')
+      }
+    } finally {
+      setLoading(false)
     }
   }
 

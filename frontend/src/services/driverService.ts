@@ -1,54 +1,64 @@
+import { apiClient } from '../api/client'
 import { API_ENDPOINTS } from '../api/config'
+import {
+  mapDriverDto,
+  toDriverCreatePayload,
+  toDriverUpdatePayload,
+  type BackendItemResponse,
+  type DriverDto,
+} from '../api/mappers'
+import { fetchAllPages } from '../api/pagination'
 import type { CreateDriverInput, UpdateDriverInput } from '../api/types'
 import type { Driver } from '../types'
-import { notImplemented } from '../api/placeholder'
 
 /**
  * Fetch all drivers.
- * TODO: GET /drivers
+ * GET /drivers
  */
-export function getDrivers(): Promise<Driver[]> {
-  void API_ENDPOINTS.drivers
-  return notImplemented('getDrivers()')
+export async function getDrivers(): Promise<Driver[]> {
+  const dtos = await fetchAllPages<DriverDto>(API_ENDPOINTS.drivers)
+  return dtos.map((dto) => mapDriverDto(dto))
 }
 
 /**
  * Fetch a single driver by ID.
- * TODO: GET /drivers/:id
+ * GET /drivers/:id
  */
-export function getDriver(id: string): Promise<Driver> {
-  void API_ENDPOINTS.drivers
-  void id
-  return notImplemented('getDriver()')
+export async function getDriver(id: string): Promise<Driver> {
+  const response = await apiClient.get<BackendItemResponse<DriverDto>>(
+    `${API_ENDPOINTS.drivers}/${id}`,
+  )
+  return mapDriverDto(response.data)
 }
 
 /**
  * Onboard a new driver.
- * TODO: POST /drivers
+ * POST /drivers
  */
-export function createDriver(input: CreateDriverInput): Promise<Driver> {
-  void API_ENDPOINTS.drivers
-  void input
-  return notImplemented('createDriver()')
+export async function createDriver(input: CreateDriverInput): Promise<Driver> {
+  const response = await apiClient.post<BackendItemResponse<DriverDto>>(
+    API_ENDPOINTS.drivers,
+    toDriverCreatePayload(input),
+  )
+  return mapDriverDto(response.data)
 }
 
 /**
  * Update driver profile or status.
- * TODO: PATCH /drivers/:id
+ * PUT /drivers/:id
  */
-export function updateDriver(id: string, input: UpdateDriverInput): Promise<Driver> {
-  void API_ENDPOINTS.drivers
-  void id
-  void input
-  return notImplemented('updateDriver()')
+export async function updateDriver(id: string, input: UpdateDriverInput): Promise<Driver> {
+  const response = await apiClient.put<BackendItemResponse<DriverDto>>(
+    `${API_ENDPOINTS.drivers}/${id}`,
+    toDriverUpdatePayload(input),
+  )
+  return mapDriverDto(response.data)
 }
 
 /**
  * Remove a driver record.
- * TODO: DELETE /drivers/:id
+ * DELETE /drivers/:id
  */
-export function deleteDriver(id: string): Promise<void> {
-  void API_ENDPOINTS.drivers
-  void id
-  return notImplemented('deleteDriver()')
+export async function deleteDriver(id: string): Promise<void> {
+  await apiClient.delete(`${API_ENDPOINTS.drivers}/${id}`)
 }

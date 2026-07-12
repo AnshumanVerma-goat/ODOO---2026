@@ -8,6 +8,7 @@ const statusColors: Record<string, string> = {
   available: 'info',
   scheduled: 'info',
   completed: 'muted',
+  cancelled: 'danger',
   open: 'warning',
   resolved: 'success',
   investigating: 'info',

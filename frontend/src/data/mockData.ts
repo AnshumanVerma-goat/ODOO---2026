@@ -43,35 +43,6 @@ export const expenses: Expense[] = [
   { id: 'E006', category: 'other', vehicle: 'Van Delta', amount: 1500, date: '2026-07-08', description: 'Toll charges' },
 ]
 
-/** Simulated user database — role is resolved from credentials, not user selection. */
-export const demoUsers = [
-  {
-    email: 'admin@transportops.com',
-    password: 'admin123',
-    name: 'Arjun Mehta',
-    role: 'fleet_manager' as UserRole,
-  },
-  {
-    email: 'driver@transportops.com',
-    password: 'demo123',
-    name: 'Rajesh Kumar',
-    role: 'driver' as UserRole,
-    driverId: 'D001',
-  },
-  {
-    email: 'safety@transportops.com',
-    password: 'demo123',
-    name: 'Priya Nair',
-    role: 'safety_officer' as UserRole,
-  },
-  {
-    email: 'finance@transportops.com',
-    password: 'demo123',
-    name: 'Karan Joshi',
-    role: 'finance_analytics_manager' as UserRole,
-  },
-]
-
 export const roleLabels = Object.fromEntries(
   (Object.entries(ROLE_CONFIG) as [UserRole, (typeof ROLE_CONFIG)[UserRole]][]).map(
     ([role, config]) => [role, config.label],

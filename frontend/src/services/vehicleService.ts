@@ -1,54 +1,64 @@
+import { apiClient } from '../api/client'
 import { API_ENDPOINTS } from '../api/config'
+import {
+  mapVehicleDto,
+  toVehicleCreatePayload,
+  toVehicleUpdatePayload,
+  type BackendItemResponse,
+  type VehicleDto,
+} from '../api/mappers'
+import { fetchAllPages } from '../api/pagination'
 import type { CreateVehicleInput, UpdateVehicleInput } from '../api/types'
 import type { Vehicle } from '../types'
-import { notImplemented } from '../api/placeholder'
 
 /**
  * Fetch all fleet vehicles.
- * TODO: GET /vehicles
+ * GET /vehicles
  */
-export function getVehicles(): Promise<Vehicle[]> {
-  void API_ENDPOINTS.vehicles
-  return notImplemented('getVehicles()')
+export async function getVehicles(): Promise<Vehicle[]> {
+  const dtos = await fetchAllPages<VehicleDto>(API_ENDPOINTS.vehicles)
+  return dtos.map(mapVehicleDto)
 }
 
 /**
  * Fetch a single vehicle by ID.
- * TODO: GET /vehicles/:id
+ * GET /vehicles/:id
  */
-export function getVehicle(id: string): Promise<Vehicle> {
-  void API_ENDPOINTS.vehicles
-  void id
-  return notImplemented('getVehicle()')
+export async function getVehicle(id: string): Promise<Vehicle> {
+  const response = await apiClient.get<BackendItemResponse<VehicleDto>>(
+    `${API_ENDPOINTS.vehicles}/${id}`,
+  )
+  return mapVehicleDto(response.data)
 }
 
 /**
  * Register a new vehicle.
- * TODO: POST /vehicles
+ * POST /vehicles
  */
-export function createVehicle(input: CreateVehicleInput): Promise<Vehicle> {
-  void API_ENDPOINTS.vehicles
-  void input
-  return notImplemented('createVehicle()')
+export async function createVehicle(input: CreateVehicleInput): Promise<Vehicle> {
+  const response = await apiClient.post<BackendItemResponse<VehicleDto>>(
+    API_ENDPOINTS.vehicles,
+    toVehicleCreatePayload(input),
+  )
+  return mapVehicleDto(response.data)
 }
 
 /**
  * Update an existing vehicle.
- * TODO: PATCH /vehicles/:id
+ * PUT /vehicles/:id
  */
-export function updateVehicle(id: string, input: UpdateVehicleInput): Promise<Vehicle> {
-  void API_ENDPOINTS.vehicles
-  void id
-  void input
-  return notImplemented('updateVehicle()')
+export async function updateVehicle(id: string, input: UpdateVehicleInput): Promise<Vehicle> {
+  const response = await apiClient.put<BackendItemResponse<VehicleDto>>(
+    `${API_ENDPOINTS.vehicles}/${id}`,
+    toVehicleUpdatePayload(input),
+  )
+  return mapVehicleDto(response.data)
 }
 
 /**
  * Remove a vehicle from the fleet.
- * TODO: DELETE /vehicles/:id
+ * DELETE /vehicles/:id
  */
-export function deleteVehicle(id: string): Promise<void> {
-  void API_ENDPOINTS.vehicles
-  void id
-  return notImplemented('deleteVehicle()')
+export async function deleteVehicle(id: string): Promise<void> {
+  await apiClient.delete(`${API_ENDPOINTS.vehicles}/${id}`)
 }

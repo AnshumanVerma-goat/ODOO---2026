@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { getDashboardPath } from '../config/roles'
-import { demoUsers } from '../data/mockData'
+import { ApiRequestError } from '../api/client'
+import * as authService from '../services/authService'
 import type { UserRole } from '../types'
 
 export interface AuthUser {
@@ -19,54 +20,50 @@ interface LoginResult {
 interface AuthContextType {
   user: AuthUser | null
   role: UserRole | null
-  login: (email: string, password: string) => LoginResult
-  logout: () => void
+  isInitializing: boolean
+  login: (email: string, password: string) => Promise<LoginResult>
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
-const STORAGE_KEY = 'transportops_auth'
-
-function loadStoredUser(): AuthUser | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as AuthUser) : null
-  } catch {
-    return null
-  }
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(loadStoredUser)
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [isInitializing, setIsInitializing] = useState(true)
 
-  const login = (email: string, password: string): LoginResult => {
-    const account = demoUsers.find(
-      (u) => u.email.toLowerCase() === email.trim().toLowerCase(),
-    )
-
-    if (!account || password !== account.password) {
-      return { success: false, error: 'Invalid email or password.' }
+  useEffect(() => {
+    if (!authService.hasStoredSession()) {
+      setIsInitializing(false)
+      return
     }
 
-    const authUser: AuthUser = {
-      name: account.name,
-      email: account.email,
-      role: account.role,
-      ...(account.driverId ? { driverId: account.driverId } : {}),
-    }
+    authService
+      .getCurrentUser()
+      .then((authUser) => setUser(authUser))
+      .catch(() => authService.clearTokens())
+      .finally(() => setIsInitializing(false))
+  }, [])
 
-    setUser(authUser)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser))
-
-    return {
-      success: true,
-      redirectTo: getDashboardPath(account.role),
+  const login = async (email: string, password: string): Promise<LoginResult> => {
+    try {
+      const authUser = await authService.login({ email: email.trim(), password })
+      setUser(authUser)
+      return {
+        success: true,
+        redirectTo: getDashboardPath(authUser.role),
+      }
+    } catch (err) {
+      const message =
+        err instanceof ApiRequestError
+          ? err.message
+          : 'An unexpected error occurred. Please try again.'
+      return { success: false, error: message }
     }
   }
 
-  const logout = () => {
+  const logout = async () => {
+    await authService.logout()
     setUser(null)
-    localStorage.removeItem(STORAGE_KEY)
   }
 
   return (
@@ -74,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         role: user?.role ?? null,
+        isInitializing,
         login,
         logout,
       }}

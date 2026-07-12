@@ -1,11 +1,8 @@
-import { createContext, useContext, useState, type ReactNode } from 'react'
-import { trips as initialTrips } from '../data/mockData'
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { ApiRequestError } from '../api/client'
+import type { AsyncStatus } from '../hooks/useAsyncData'
+import * as tripService from '../services/tripService'
 import type { Trip, TripIssue, TripIssueCategory } from '../types'
-
-interface TripsState {
-  trips: Trip[]
-  issues: TripIssue[]
-}
 
 interface ReportIssueInput {
   tripId: string
@@ -15,65 +12,81 @@ interface ReportIssueInput {
   description: string
 }
 
-interface TripsContextType extends TripsState {
-  startTrip: (tripId: string) => void
-  completeTrip: (tripId: string) => void
+interface TripsContextType {
+  trips: Trip[]
+  issues: TripIssue[]
+  status: AsyncStatus
+  error: string | null
+  refetch: () => void
+  startTrip: (tripId: string) => Promise<void>
+  completeTrip: (tripId: string) => Promise<void>
+  cancelTrip: (tripId: string) => Promise<void>
   reportIssue: (input: ReportIssueInput) => void
   getTripsForDriver: (driverId: string) => Trip[]
   getIssuesForDriver: (driverId: string) => TripIssue[]
 }
 
-const STORAGE_KEY = 'transportops_trips_state'
-
 const TripsContext = createContext<TripsContextType | null>(null)
 
-function formatTime(date: Date): string {
-  return date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })
-}
-
-function loadState(): TripsState {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw) as TripsState
-  } catch {
-    /* use defaults */
-  }
-  return { trips: initialTrips, issues: [] }
-}
-
-function persistState(state: TripsState) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-}
-
 export function TripsProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<TripsState>(loadState)
+  const [trips, setTrips] = useState<Trip[]>([])
+  const [issues, setIssues] = useState<TripIssue[]>([])
+  const [status, setStatus] = useState<AsyncStatus>('idle')
+  const [error, setError] = useState<string | null>(null)
+  const [tick, setTick] = useState(0)
 
-  const mutateState = (updater: (prev: TripsState) => TripsState) => {
-    setState((prev) => {
-      const next = updater(prev)
-      persistState(next)
-      return next
-    })
+  const refetch = useCallback(() => setTick((value) => value + 1), [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadTrips() {
+      setStatus('loading')
+      setError(null)
+
+      try {
+        const data = await tripService.getTrips()
+        if (!cancelled) {
+          setTrips(data)
+          setStatus('success')
+        }
+      } catch (err) {
+        if (!cancelled) {
+          const message =
+            err instanceof ApiRequestError
+              ? err.message
+              : err instanceof Error
+                ? err.message
+                : 'Failed to load trips'
+          setError(message)
+          setStatus('error')
+        }
+      }
+    }
+
+    loadTrips()
+    return () => {
+      cancelled = true
+    }
+  }, [tick])
+
+  const updateTripInState = (updated: Trip) => {
+    setTrips((prev) => prev.map((trip) => (trip.id === updated.id ? updated : trip)))
   }
 
-  const startTrip = (tripId: string) => {
-    mutateState((prev) => ({
-      ...prev,
-      trips: prev.trips.map((t) =>
-        t.id === tripId && t.status === 'scheduled'
-          ? { ...t, status: 'active', startTime: formatTime(new Date()) }
-          : t,
-      ),
-    }))
+  const startTrip = async (tripId: string) => {
+    const updated = await tripService.startTrip(tripId)
+    updateTripInState(updated)
   }
 
-  const completeTrip = (tripId: string) => {
-    mutateState((prev) => ({
-      ...prev,
-      trips: prev.trips.map((t) =>
-        t.id === tripId && t.status === 'active' ? { ...t, status: 'completed' } : t,
-      ),
-    }))
+  const completeTrip = async (tripId: string) => {
+    const updated = await tripService.completeTrip(tripId)
+    updateTripInState(updated)
+  }
+
+  const cancelTrip = async (tripId: string) => {
+    const updated = await tripService.cancelTrip(tripId)
+    updateTripInState(updated)
   }
 
   const reportIssue = (input: ReportIssueInput) => {
@@ -87,21 +100,26 @@ export function TripsProvider({ children }: { children: ReactNode }) {
       reportedAt: new Date().toISOString(),
       status: 'open',
     }
-    mutateState((prev) => ({ ...prev, issues: [issue, ...prev.issues] }))
+    setIssues((prev) => [issue, ...prev])
   }
 
   const getTripsForDriver = (driverId: string) =>
-    state.trips.filter((t) => t.driverId === driverId)
+    trips.filter((trip) => trip.driverId === driverId)
 
   const getIssuesForDriver = (driverId: string) =>
-    state.issues.filter((i) => i.driverId === driverId)
+    issues.filter((issue) => issue.driverId === driverId)
 
   return (
     <TripsContext.Provider
       value={{
-        ...state,
+        trips,
+        issues,
+        status,
+        error,
+        refetch,
         startTrip,
         completeTrip,
+        cancelTrip,
         reportIssue,
         getTripsForDriver,
         getIssuesForDriver,

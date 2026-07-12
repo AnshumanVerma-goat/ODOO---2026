@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
-import { vehicles } from '../data/mockData'
+import { useEffect, useMemo, useState } from 'react'
 import { Pagination } from '../components/Pagination'
 import { StatusBadge } from '../components/StatusBadge'
+import { getVehicles } from '../services/vehicleService'
 import type { Vehicle } from '../types'
 
 type StatusFilter = 'all' | Vehicle['status']
@@ -16,9 +16,36 @@ const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
 ]
 
 export function Fleet() {
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [page, setPage] = useState(1)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadVehicles() {
+      try {
+        setLoading(true)
+        setError(null)
+        const data = await getVehicles()
+        if (!cancelled) setVehicles(data)
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load vehicles')
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    loadVehicles()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -31,7 +58,7 @@ export function Fleet() {
       const matchesStatus = statusFilter === 'all' || vehicle.status === statusFilter
       return matchesSearch && matchesStatus
     })
-  }, [search, statusFilter])
+  }, [vehicles, search, statusFilter])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const currentPage = Math.min(page, totalPages)
@@ -123,7 +150,19 @@ export function Fleet() {
             </tr>
           </thead>
           <tbody>
-            {paginated.length === 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan={7} className="empty-table-cell">
+                  Loading vehicles...
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={7} className="empty-table-cell">
+                  {error}
+                </td>
+              </tr>
+            ) : paginated.length === 0 ? (
               <tr>
                 <td colSpan={7} className="empty-table-cell">
                   No vehicles match your search or filters.
@@ -165,7 +204,11 @@ export function Fleet() {
       </div>
 
       <div className="data-cards">
-        {paginated.length === 0 ? (
+        {loading ? (
+          <div className="empty-state">Loading vehicles...</div>
+        ) : error ? (
+          <div className="empty-state">{error}</div>
+        ) : paginated.length === 0 ? (
           <div className="empty-state">No vehicles match your search or filters.</div>
         ) : (
           paginated.map((vehicle) => (

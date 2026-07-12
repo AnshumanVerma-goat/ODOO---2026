@@ -29,7 +29,8 @@ export interface Trip {
   driverId: string
   driver: string
   vehicle: string
-  status: 'active' | 'scheduled' | 'completed'
+  vehicleId?: string
+  status: 'active' | 'scheduled' | 'completed' | 'cancelled'
   startTime: string
   eta: string
 }

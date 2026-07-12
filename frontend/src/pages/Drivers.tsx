@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react'
-import { drivers, trips } from '../data/mockData'
+import { useEffect, useMemo, useState } from 'react'
 import { DriverDetailModal } from '../components/fleet/DriverDetailModal'
 import { KpiCard } from '../components/finance/KpiCard'
 import { SafetyBar } from '../components/SafetyBar'
 import { StatusBadge } from '../components/StatusBadge'
+import { getDrivers } from '../services/driverService'
 import type { Driver } from '../types'
 
 type StatusFilter = 'all' | Driver['status']
@@ -23,9 +23,36 @@ function getLicenseWarning(expiry: string): boolean {
 }
 
 export function Drivers() {
+  const [drivers, setDrivers] = useState<Driver[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadDrivers() {
+      try {
+        setLoading(true)
+        setError(null)
+        const data = await getDrivers()
+        if (!cancelled) setDrivers(data)
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load drivers')
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    loadDrivers()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -38,15 +65,15 @@ export function Drivers() {
       const matchesStatus = statusFilter === 'all' || driver.status === statusFilter
       return matchesSearch && matchesStatus
     })
-  }, [search, statusFilter])
+  }, [drivers, search, statusFilter])
 
-  const avgSafety = Math.round(
-    drivers.reduce((sum, driver) => sum + driver.safetyScore, 0) / drivers.length,
-  )
   const onTripCount = drivers.filter((d) => d.status === 'on_trip').length
   const availableCount = drivers.filter((d) => d.status === 'available').length
+  const avgSafety =
+    drivers.length > 0
+      ? Math.round(drivers.reduce((sum, driver) => sum + driver.safetyScore, 0) / drivers.length)
+      : 0
   const totalTrips = drivers.reduce((sum, d) => sum + d.tripsCompleted, 0)
-  const activeFleetTrips = trips.filter((t) => t.status === 'active').length
 
   const statusCounts = {
     all: drivers.length,
@@ -79,7 +106,7 @@ export function Drivers() {
         <KpiCard
           label="Drivers On Trip"
           value={onTripCount}
-          trend={`${activeFleetTrips} active routes`}
+          trend={`${onTripCount} active routes`}
           trendDirection={onTripCount > 0 ? 'up' : 'neutral'}
           variant="info"
           icon="🚛"
@@ -144,7 +171,19 @@ export function Drivers() {
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan={7} className="empty-table-cell">
+                  Loading drivers...
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={7} className="empty-table-cell">
+                  {error}
+                </td>
+              </tr>
+            ) : filtered.length === 0 ? (
               <tr>
                 <td colSpan={7} className="empty-table-cell">
                   No drivers match your search or filters.
@@ -195,7 +234,11 @@ export function Drivers() {
       </div>
 
       <div className="data-cards">
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="empty-state">Loading drivers...</div>
+        ) : error ? (
+          <div className="empty-state">{error}</div>
+        ) : filtered.length === 0 ? (
           <div className="empty-state">No drivers match your search or filters.</div>
         ) : (
           filtered.map((driver) => (
