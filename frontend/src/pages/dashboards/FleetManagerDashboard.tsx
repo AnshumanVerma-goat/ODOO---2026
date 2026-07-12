@@ -1,9 +1,35 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { drivers, maintenanceRecords, trips, vehicles } from '../../data/mockData'
+import { apiClient } from '../../api/client'
+import { maintenanceRecords, trips, vehicles } from '../../data/mockData'
 import { KpiCard } from '../../components/finance/KpiCard'
 import { FleetQuickLinks } from '../../components/fleet/FleetQuickLinks'
 import { StatusBadge } from '../../components/StatusBadge'
 import { formatRelativeDate } from '../../utils/finance'
+
+interface DashboardKPIs {
+  active_vehicles: number
+  available_vehicles: number
+  vehicles_in_shop: number
+  retired_vehicles: number
+  drivers_available: number
+  drivers_on_trip: number
+  drivers_suspended: number
+  pending_trips: number
+  completed_trips: number
+  fleet_utilization: number
+  total_fuel_cost: number
+  total_maintenance_cost: number
+  operational_cost: number
+  average_fuel_efficiency: number
+  vehicle_roi: number
+}
+
+interface DashboardKpisResponse {
+  success: boolean
+  message: string
+  data: DashboardKPIs
+}
 
 interface FleetActivity {
   id: string
@@ -63,14 +89,44 @@ function buildRecentActivity(): FleetActivity[] {
 }
 
 export function FleetManagerDashboard() {
-  const activeVehicles = vehicles.filter((v) => v.status === 'active').length
+  const [kpis, setKpis] = useState<DashboardKPIs | null>(null)
+  const [kpisLoading, setKpisLoading] = useState(true)
+  const [kpisError, setKpisError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadKpis() {
+      try {
+        setKpisLoading(true)
+        setKpisError(null)
+        const response = await apiClient.get<DashboardKpisResponse>('/dashboard/kpis')
+        if (!cancelled) setKpis(response.data)
+      } catch (err) {
+        if (!cancelled) {
+          setKpisError(err instanceof Error ? err.message : 'Failed to load dashboard KPIs')
+        }
+      } finally {
+        if (!cancelled) setKpisLoading(false)
+      }
+    }
+
+    loadKpis()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const activeTrips = trips.filter((t) => t.status === 'active').length
-  const scheduledTrips = trips.filter((t) => t.status === 'scheduled').length
-  const inMaintenance = vehicles.filter((v) => v.status === 'maintenance').length
-  const pendingMaintenance = maintenanceRecords.filter((m) => m.status === 'pending').length
-  const availableDrivers = drivers.filter((d) => d.status === 'available').length
-  const fleetUtilization = Math.round((activeVehicles / vehicles.length) * 100)
   const recentActivity = buildRecentActivity()
+
+  const totalVehicles = kpis ? kpis.active_vehicles + kpis.retired_vehicles : 0
+  const activeVehicleCount = kpis ? kpis.active_vehicles - kpis.vehicles_in_shop : 0
+  const vehiclesInShop = kpis?.vehicles_in_shop ?? 0
+  const activeTripCount = kpis?.drivers_on_trip ?? 0
+  const pendingTrips = kpis?.pending_trips ?? 0
+  const fleetUtilization = kpis ? Math.round(kpis.fleet_utilization) : 0
+  const availableDrivers = kpis?.drivers_available ?? 0
 
   return (
     <div className="page fleet-page">
@@ -89,34 +145,60 @@ export function FleetManagerDashboard() {
       <div className="kpi-grid">
         <KpiCard
           label="Total Vehicles"
-          value={vehicles.length}
-          trend={`${activeVehicles} active · ${inMaintenance} in service`}
+          value={kpisLoading ? '—' : totalVehicles}
+          trend={
+            kpisLoading
+              ? 'Loading...'
+              : kpisError
+                ? kpisError
+                : `${activeVehicleCount} active · ${vehiclesInShop} in service`
+          }
           trendDirection="neutral"
           variant="default"
           icon="🚛"
         />
         <KpiCard
           label="Active Trips"
-          value={activeTrips}
-          trend={`${scheduledTrips} scheduled today`}
-          trendDirection={activeTrips > 0 ? 'up' : 'neutral'}
+          value={kpisLoading ? '—' : activeTripCount}
+          trend={
+            kpisLoading
+              ? 'Loading...'
+              : kpisError
+                ? kpisError
+                : `${pendingTrips} scheduled today`
+          }
+          trendDirection={activeTripCount > 0 ? 'up' : 'neutral'}
           variant="success"
           icon="🗺️"
         />
         <KpiCard
           label="Fleet Utilization"
-          value={`${fleetUtilization}%`}
-          trend={`${availableDrivers} drivers available`}
+          value={kpisLoading ? '—' : `${fleetUtilization}%`}
+          trend={
+            kpisLoading
+              ? 'Loading...'
+              : kpisError
+                ? kpisError
+                : `${availableDrivers} drivers available`
+          }
           trendDirection={fleetUtilization >= 60 ? 'up' : 'down'}
           variant="info"
           icon="📊"
         />
         <KpiCard
           label="Pending Maintenance"
-          value={pendingMaintenance}
-          trend={inMaintenance > 0 ? `${inMaintenance} vehicle in shop` : 'All clear'}
-          trendDirection={pendingMaintenance > 0 ? 'down' : 'up'}
-          variant={pendingMaintenance > 0 ? 'warning' : 'success'}
+          value={kpisLoading ? '—' : vehiclesInShop}
+          trend={
+            kpisLoading
+              ? 'Loading...'
+              : kpisError
+                ? kpisError
+                : vehiclesInShop > 0
+                  ? `${vehiclesInShop} vehicle in shop`
+                  : 'All clear'
+          }
+          trendDirection={vehiclesInShop > 0 ? 'down' : 'up'}
+          variant={vehiclesInShop > 0 ? 'warning' : 'success'}
           icon="🔧"
         />
       </div>
