@@ -1,56 +1,51 @@
-import { useFonts } from 'expo-font';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
+import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/components/useColorScheme';
-
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
-
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
-};
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+import { useAuthStore } from '../src/store/authStore';
+import { useAlertStore } from '../src/store/alertStore';
+import { useDeviceStore } from '../src/store/deviceStore';
+import { websocketService } from '../src/services/websocket';
+import { requestNotificationPermission } from '../src/services/notifications';
 
 export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
-  useEffect(() => {
-    if (error) throw error;
-  }, [error]);
+  const router = useRouter();
+  const segments = useSegments();
+  const { isAuthenticated, hasCompletedOnboarding } = useAuthStore();
+  const { handleIncomingEvent } = useAlertStore();
+  const { applyDeviceStatusEvent } = useDeviceStore();
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
+    requestNotificationPermission();
+    websocketService.connect((event) => {
+      if (event.type === 'DEVICE_STATUS') {
+        applyDeviceStatusEvent(event.payload);
+      }
+      handleIncomingEvent(event);
+      if (event.type === 'FALL_DETECTED' || event.type === 'SOS') {
+        router.replace('/(main)/alerts');
+      }
+    });
+
+    return () => websocketService.disconnect();
+  }, [applyDeviceStatusEvent, handleIncomingEvent, router]);
+
+  useEffect(() => {
+    const inAuth = segments[0] === '(auth)';
+    const inOnboarding = segments[0] === '(onboarding)';
+
+    if (!isAuthenticated && !inAuth) {
+      router.replace('/(auth)/login');
+      return;
     }
-  }, [loaded]);
 
-  if (!loaded) {
-    return null;
-  }
+    if (isAuthenticated && !hasCompletedOnboarding && !inOnboarding) {
+      router.replace('/(onboarding)/profile');
+      return;
+    }
 
-  return <RootLayoutNav />;
-}
+    if (isAuthenticated && hasCompletedOnboarding && (inAuth || inOnboarding)) {
+      router.replace('/(main)');
+    }
+  }, [segments, isAuthenticated, hasCompletedOnboarding, router]);
 
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-
-  return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
-    </ThemeProvider>
-  );
+  return <Slot />;
 }
