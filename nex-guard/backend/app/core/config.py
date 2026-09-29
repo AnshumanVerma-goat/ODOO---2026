@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     api_v1_prefix: str = "/api/v1"
 
-    database_url: str = "******localhost:5432/nexguard"
+    database_url: str = "postgresql+psycopg2://nexguard:nexguard@localhost:5432/nexguard"
 
     secret_key: str = "change-me"
     access_token_expire_minutes: int = 60 * 24
